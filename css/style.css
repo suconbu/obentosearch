@@ -124,6 +124,10 @@ input::placeholder {
 	border-radius: 0.2rem;
 }
 
+.grayout {
+	color: rgba(0, 0, 0, 0.3);
+}
+
 .legend-list {
 	display: flex;
 	flex-flow: row wrap;

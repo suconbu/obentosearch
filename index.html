@@ -31,7 +31,7 @@
       ref="article"
       :key="article.id"
       :data="article"
-      :text="article.name"
+      :text="`${article.name} <span class='grayout'> - ${article.price}円</span>`"
       :icon="article.icon"
       :click="articleClicked"
       :highlighter="getKeywordHighlighted">
