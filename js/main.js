@@ -1,21 +1,11 @@
 (function() {
 
 Vue.component("list-item", {
-    props: ["data", "text", "icon", "exclamation", "click", "highlighter"],
+    props: ["data", "text", "icon", "click", "highlighter"],
     template: `
         <li @click="click(data)">
             <img class="normal-icon" v-if="icon" :src="icon">
             <span v-html="highlighter ? highlighter(text) : text" />
-            <img class="small-icon" v-if="exclamation" src="img/note.png">
-        </li>
-    `
-});
-
-Vue.component("legend-list-item", {
-    props: ["text", "icon"],
-    template: `
-        <li class="legend-list-item">
-            <img class="legend-icon" :src="icon">{{text}}
         </li>
     `
 });
@@ -23,17 +13,9 @@ Vue.component("legend-list-item", {
 // 品目リスト更新時の一回分の増加数(0なら一回で全部表示)
 const ARTICLE_TRANSFER_UNIT = 50;
 
-// 自治体
-const SUPPORTED_CITIES = [
-    { id: "aichi_toyokawa", name: "豊川市", file: "data/gomidata_aichi_toyokawa.json" },
-    { id: "aichi_nagoya", name: "名古屋市", file: "data/gomidata_aichi_nagoya.json" },
-    { id: "aichi_okazaki", name: "岡崎市", file: "data/gomidata_aichi_okazaki.json" },
-    { id: "aichi_toyota", name: "豊田市", file: "data/gomidata_aichi_toyota.json" },
-    { id: "aichi_ichinomiya", name: "一宮市", file: "data/gomidata_aichi_ichinomiya.json" },
-    { id: "aichi_toyohashi", name: "豊橋市", file: "data/gomidata_aichi_toyohashi.json" },
-    { id: "aichi_anjo", name: "安城市", file: "data/gomidata_aichi_anjo.json" },
-    { id: "aichi_nishio_a", name: "西尾市(西尾)", file: "data/gomidata_aichi_nishio_a.json" }
-    { id: "aichi_nishio_b", name: "西尾市(一色・吉良・幡豆)", file: "data/gomidata_aichi_nishio_b.json" }
+// お弁当屋
+const SUPPORTED_UNITS = [
+    { id: "dondon", name: "どんどん", file: "data/dondon/menu.json" }
 ];
 
 // // 共通分類
@@ -115,13 +97,13 @@ function getMatchedArticles(articles, keyword) {
     return matched;
 }
 
-function request(filename) {
+function requestFeed(unit) {
     const request = new XMLHttpRequest();
-    request.open('GET', filename);
+    request.open('GET', unit.file);
     request.responseType = 'json';
     request.send();
     request.onload = function() {
-        appState.load(request.response);
+        appState.load(request.response, unit);
         app = app || createApp(appState);
         if (appState.initialArticleKeyword) {
             app.$data.articleKeyword = appState.initialArticleKeyword;
@@ -130,23 +112,34 @@ function request(filename) {
     }
 }
 
+class Article {
+    constructor(item, data_dir) {
+        this.id = item.id;
+        this.name = item.title;
+        this.icon = data_dir + "/" + item.image;
+        this.price = item._price;
+        this.nameKana = item._title_kana;
+        this.nameRoman = kana2roman.convert(item._title_kana, true);
+    }
+}
+
 class AppState {
     constructor() {
-        this.allCitiesById = {}
-        SUPPORTED_CITIES.forEach(city => this.allCitiesById[city.id] = city);
+        this.allUnitsById = {}
+        SUPPORTED_UNITS.forEach(unit => this.allUnitsById[unit.id] = unit);
         // this.commonCategoriesById = {};
         // for (let commonCategory of COMMON_CATEGORIES) {
         //     this.commonCategoriesById[commonCategory.id] = Object.assign({}, commonCategory);
         // }
-        this.selectedCity = null;
-        this.cityPopupVisible = false;
+        this.selectedUnit = null;
+        this.unitPopupVisible = false;
         this.initialArticleKeyword = null;
         this.reset();
     }
     reset() {
         this.timeoutId = 0;
         this.articleKeyword = "";
-        this.cityKeyword = "";
+        this.unitKeyword = "";
         this.placeholder = "";
         this.categoriesById = {};
         this.allArticles = [];
@@ -154,38 +147,22 @@ class AppState {
         this.visibleArticles = [];
         this.selectedArticle = null;
         // this.legendCategoryIds = [];
-        this.dataSourceUrl = null;
+        this.homepageUrl = null;
         this.updatedAt = null;
     }
-    load(gomidata) {
+    load(menufeed, unit) {
         this.reset();
-        this.dataSourceUrl = gomidata.datasourceUrl;
-        this.updatedAt = gomidata.updatedAt;
-        this.allArticles = gomidata.articles;
-        this.allArticles.forEach((article, index) => {
-            article.no = index;
-            article.nameRoman = kana2roman.convert(article.nameKana, true);
-        });
-
-        this.categoriesById = {};
-        for (let categoryId of Object.keys(gomidata.categoryDefinitions)) {
-            const periodIndex = categoryId.indexOf(".");
-            const topLevelCategoryId = (0 <= periodIndex) ? categoryId.slice(0, periodIndex) : categoryId;
-            // const entry = Object.assign({},
-            //     this.commonCategoriesById[commonCategoryId] ||
-            //     this.commonCategoriesById.unknown);
-            const entry = { id: categoryId, name: "その他" };
-            const def = gomidata.categoryDefinitions[categoryId];
-            // 独自定義値あればそれで上書き
-            entry.name = def.name || entry.name;
-            entry.note = def.note || entry.note;
-            entry.icon = def.icon || entry.icon;
-            if (!entry.icon) {
-                entry.icon = `img/${topLevelCategoryId}.png`;
-            }
-            entry.isTopLevel = (categoryId == topLevelCategoryId);
-            this.categoriesById[categoryId] = entry;
-        }
+        this.homepageUrl = menufeed.home_page_url;
+        this.updatedAt = Math.max(menufeed.items.map(x => new Date(x.date_modified)));
+        this.allArticles = [];
+        const data_dir = `data/${unit.id}`;
+        menufeed.items.forEach(item => {
+            this.allArticles.push(new Article(item, data_dir));
+        })
+        // this.allArticles = menufeed.items;
+        // this.allArticles.forEach((article) => {
+        //     article.nameRoman = kana2roman.convert(article._nameKana, true);
+        // });
 
         const index = Math.floor(Math.random() * this.allArticles.length);
         this.placeholder = "例：" + this.allArticles[index].name;
@@ -210,7 +187,7 @@ function createApp(data) {
             }
         },
         computed: {
-            gomidataAvailable() {
+            menufeedAvailable() {
                 return 0 < this.allArticles.length;
             },
             topLevelCategories() {
@@ -285,24 +262,24 @@ function createApp(data) {
             getKeywordHighlighted(text) {
                 return this.articleKeyword ? text.replace(this.articleKeywordRegex, match => "<span class='keyword-highlight'>" + match + "</span>") : text;
             },
-            openCityPopup() {
-                this.cityPopupVisible = true;
+            openUnitPopup() {
+                this.unitPopupVisible = true;
             },
-            closeCityPopup() {
-                if (this.selectedCity) {
-                    this.cityPopupVisible = false;
+            closeUnitPopup() {
+                if (this.selectedUnit) {
+                    this.unitPopupVisible = false;
                 }
             },
-            popupCityClicked(city) {
-                this.cityPopupVisible = false;
-                this.selectedCity = city;
-                request(city.file);
+            popupUnitClicked(unit) {
+                this.unitPopupVisible = false;
+                this.selectedUnit = unit;
+                requestFeed(unit);
                 this.updateQueryString();
             },
             updateQueryString() {
                 q = [];
-                if (this.selectedCity) {
-                    q.push(`city=${this.selectedCity.id}`);
+                if (this.selectedUnit) {
+                    q.push(`unit=${this.selectedUnit.id}`);
                 }
                 if (this.articleKeyword) {
                     q.push(`keyword=${this.articleKeyword}`);
@@ -317,18 +294,18 @@ let app = null;
 const appState = new AppState();
 
 const vars = getQueryVars();
-if (vars.city) {
-    appState.selectedCity = appState.allCitiesById[vars.city];
+if (vars.unit) {
+    appState.selectedUnit = appState.allUnitsById[vars.unit];
 }
 if (vars.keyword) {
     appState.initialArticleKeyword = vars.keyword;
 }
 
-if (appState.selectedCity) {
-    request(appState.selectedCity.file);
+if (appState.selectedUnit) {
+    requestFeed(appState.selectedUnit);
 } else {
     app = createApp(appState);
-    appState.cityPopupVisible = true;
+    appState.unitPopupVisible = true;
 }
 
 })();

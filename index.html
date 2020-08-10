@@ -15,13 +15,13 @@
     document.documentElement.style.setProperty('--vh', `${vh}px`); 
   }); 
 </script>
-<title>Gomipedia</title>
+<title>おべんとサーチ</title>
 
 <div id="app" v-cloak>
 
 <main>
   <h1 class="title">
-    <label v-if="selectedCity"><a href="javascript:void(0)" @click="openCityPopup">{{selectedCity.name}}</a>の</label>ごみ分別検索
+    <label v-if="selectedUnit"><a href="javascript:void(0)" @click="openUnitPopup">{{selectedUnit.name}}</a>の</label>メニュー検索
   </h1>
   <input class="keyword-input" :placeholder="placeholder" v-model="articleKeyword">
   <ul class="normal-list">
@@ -29,46 +29,45 @@
       class="normal-list-item"
       v-for="article in visibleArticles"
       ref="article"
-      :key="article.no"
+      :key="article.id"
       :data="article"
       :text="article.name"
-      :icon="getCategoryOrDefault(article.categoryId).icon"
-      :exclamation="article.note ? true : false"
+      :icon="article.icon"
       :click="articleClicked"
       :highlighter="getKeywordHighlighted">
     </list-item>
   </ul>
-  <ul class="legend-list" v-if="gomidataAvailable">
+  <!-- <ul class="legend-list" v-if="menufeedAvailable">
     <legend-list-item
       v-for="category in topLevelCategories"
       :key="category.id"
       :text="category.name"
       :icon="category.icon">
     </list-item-legend>
-  </ul>
-  <div class="datasource" v-if="gomidataAvailable">
-    <a :href="dataSourceUrl">分別データ取得元</a>
+  </ul> -->
+  <div class="datasource" v-if="menufeedAvailable">
+    <a :href="homepageUrl">{{selectedUnit.name}}のホームページ</a>
   </div>
 </main>
 
 <transition name="popup">
-  <div class="popup-fill" v-if="cityPopupVisible" @click="closeCityPopup">
+  <div class="popup-fill" v-if="unitPopupVisible" @click="closeUnitPopup">
     <div class="popup-window" tabindex="0" ref="popupWindow" @click="dummy" @keydown="articlePopupKeydown">
-      <div class="popup-title">自治体を選びましょう</div>
-      <div class="popup-close-box" v-if="gomidataAvailable" @click="closeCityPopup">
+      <div class="popup-title">お弁当屋を選びましょう</div>
+      <div class="popup-close-box" v-if="menufeedAvailable" @click="closeUnitPopup">
         <div class="popup-close">✖</div>
       </div>
       <div class="popup-content-box">
-        <!-- <input class="city-input" v-model="cityKeyword"> -->
+        <!-- <input class="unit-input" v-model="unitKeyword"> -->
         <ul class="normal-list-horizontal">
           <list-item
             class="normal-list-item-horizontal"
-            v-for="id in Object.keys(allCitiesById)"
+            v-for="id in Object.keys(allUnitsById)"
             ref="id"
             :key="id"
-            :data="allCitiesById[id]"
-            :text="allCitiesById[id].name"
-            :click="popupCityClicked">
+            :data="allUnitsById[id]"
+            :text="allUnitsById[id].name"
+            :click="popupUnitClicked">
           </list-item>
         </ul>
       </div>
@@ -87,11 +86,11 @@
         <div class="popup-close">✖</div>
       </div>
       <div class="popup-content-box">
-        <div class="popup-category-text"><strong>{{selectedArticle.name}}</strong> は</div>
-        <img class="popup-category-icon" :src="getCategoryOrDefault(selectedArticle.categoryId).icon"/>
-        <div class="popup-category-text"><strong>{{getCategoryOrDefault(selectedArticle.categoryId).name}}</strong> です。</div>
-        <img class="popup-note-icon" src="img/note.png" v-if="selectedArticle.note"/>
-        <div class="popup-note-text" v-if="selectedArticle.note">{{selectedArticle.note}}</div>
+        <div class="popup-category-text"><strong>{{selectedArticle.name}}</strong></div>
+        <img class="popup-category-icon" :src="selectedArticle.icon"/>
+        <div class="popup-category-text"><strong>{{selectedArticle.price}}</strong>円</div>
+        <!-- <img class="popup-note-icon" src="img/note.png" v-if="selectedArticle.note"/>
+        <div class="popup-note-text" v-if="selectedArticle.note">{{selectedArticle.note}}</div> -->
       </div>
     </div>
   </div>
