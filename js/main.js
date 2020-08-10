@@ -117,7 +117,11 @@ class Article {
         this.id = item.id;
         this.name = item.title;
         if (item.image) {
-            this.icon = data_dir + "/" + item.image;
+            if (item.image.startsWith("http")) {
+                this.icon = item.image;
+            } else {
+                this.icon = data_dir + "/" + item.image;
+            }
         } else {
             this.icon = "img/noimage.png"
         }
