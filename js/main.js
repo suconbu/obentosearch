@@ -1,11 +1,12 @@
 (function() {
 
 Vue.component("list-item", {
-    props: ["data", "text", "icon", "click", "highlighter"],
+    props: ["liclass", "imgclass", "data", "text", "subtext", "icon", "click", "highlighter"],
     template: `
-        <li @click="click(data)">
-            <img class="normal-icon" v-if="icon" :src="icon">
-            <span v-html="highlighter ? highlighter(text) : text" />
+        <li v-bind:class="liclass" @click="click(data)">
+            <img v-bind:class="imgclass" v-if="icon" :src="icon">
+            <div v-html="highlighter ? highlighter(text) : text" />
+            <div class="grayout-text" v-if="subtext" v-html="subtext" />
         </li>
     `
 });
@@ -17,29 +18,6 @@ const ARTICLE_TRANSFER_UNIT = 50;
 const SUPPORTED_UNITS = [
     { id: "dondon", name: "どんどん", file: "data/dondon/menu.json" }
 ];
-
-// // 共通分類
-// // 凡例にはこの順番で表示します
-// const COMMON_CATEGORIES = [
-//     { id: "burnable", name: "可燃ごみ" },
-//     { id: "unburnable", name: "不燃ごみ" },
-//     { id: "hazardous", name: "危険ごみ" },
-//     { id: "oversized", name: "粗大ごみ" },
-//     { id: "recyclable", name: "資源" },
-//     { id: "can", name: "資源" },
-//     { id: "metal", name: "金属" },
-//     { id: "petbottle", name: "ペットボトル" },
-//     { id: "grassbottle", name: "空きびん" },
-//     { id: "reusebottle", name: "再利用びん" },
-//     { id: "beveragepack", name: "紙パック" },
-//     { id: "paperpackaging", name: "紙製容器包装" },
-//     { id: "plasticpackaging", name: "プラ製容器包装" },
-//     { id: "legalrecycling", name: "家電リサイクル法対象" },
-//     { id: "pointcollection", name: "拠点回収" },
-//     { id: "localcollection", name: "集団回収" },
-//     { id: "uncollectible", name: "回収できません" },
-//     { id: "unknown", name: "その他" }
-// ];
 
 function getQueryVars() {
     const vars = {}
@@ -128,6 +106,7 @@ class Article {
         this.price = item._price;
         this.nameKana = item._title_kana;
         this.nameRoman = kana2roman.convert(item._title_kana, true);
+        this.note = item._note;
     }
 }
 

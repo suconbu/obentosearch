@@ -24,14 +24,16 @@
     <label v-if="selectedUnit"><a href="javascript:void(0)" @click="openUnitPopup">{{selectedUnit.name}}</a>の</label>メニュー検索
   </h1>
   <input class="keyword-input" :placeholder="placeholder" v-model="articleKeyword">
-  <ul class="normal-list">
+  <ul class="normal-list-horizontal">
     <list-item
-      class="normal-list-item"
       v-for="article in visibleArticles"
       ref="article"
+      :liclass="'normal-list-item-horizontal'"
+      :imgclass="'large-icon'"
       :key="article.id"
       :data="article"
-      :text="`${article.name} <span class='grayout'> - ${article.price}円</span>`"
+      :text="article.name"
+      :subtext="`${article.price}円`"
       :icon="article.icon"
       :click="articleClicked"
       :highlighter="getKeywordHighlighted">
@@ -59,9 +61,9 @@
       </div>
       <div class="popup-content-box">
         <!-- <input class="unit-input" v-model="unitKeyword"> -->
-        <ul class="normal-list-horizontal">
+        <ul class="normal-list-horizontal unit-list">
           <list-item
-            class="normal-list-item-horizontal"
+            class="normal-list-item-horizontal unit-list-item"
             v-for="id in Object.keys(allUnitsById)"
             ref="id"
             :key="id"
@@ -86,11 +88,13 @@
         <div class="popup-close">✖</div>
       </div>
       <div class="popup-content-box">
-        <div class="popup-main-text"><strong>{{selectedArticle.name}}</strong></div>
         <img class="popup-main-icon" :src="selectedArticle.icon"/>
-        <div class="popup-main-text"><strong>{{selectedArticle.price}}</strong>円</div>
-        <!-- <img class="popup-note-icon" src="img/note.png" v-if="selectedArticle.note"/>
-        <div class="popup-note-text" v-if="selectedArticle.note">{{selectedArticle.note}}</div> -->
+        <div>
+          <div class="popup-main-text"><strong>{{selectedArticle.name}}</strong></div>
+          <div class="popup-note-text">{{selectedArticle.price}}円</div>
+        </div>
+        <img class="popup-note-icon" src="img/note.png" v-if="selectedArticle.note"/>
+        <div class="popup-note-text" v-if="selectedArticle.note">{{selectedArticle.note}}</div>
       </div>
     </div>
   </div>
