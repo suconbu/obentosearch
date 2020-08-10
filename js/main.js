@@ -116,7 +116,11 @@ class Article {
     constructor(item, data_dir) {
         this.id = item.id;
         this.name = item.title;
-        this.icon = data_dir + "/" + item.image;
+        if (item.image) {
+            this.icon = data_dir + "/" + item.image;
+        } else {
+            this.icon = "img/noimage.png"
+        }
         this.price = item._price;
         this.nameKana = item._title_kana;
         this.nameRoman = kana2roman.convert(item._title_kana, true);
